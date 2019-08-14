@@ -1,4 +1,5 @@
 #include "network.h"
+#include "user_protocol.h"
 
 // Socket initialization
 int prepare_socket(int port_num)
@@ -47,30 +48,66 @@ int prepare_socket(int port_num)
 int communicate(int sockfd)
 {
     // Buffer for message handling
-    char               buffer[BUFF_SIZE];
-    int                exit_status = 0;
+    uint8_t* buffer      = NULL;
+    int32_t  exit_status = 0;
+
+    // Packet
+    struct user_packet_t packet;
+    struct item_data_t*  item_data;
+
+    uint32_t iter;
 
     // Receive message and print it
     while(1) {
-        memset(buffer, 0, BUFF_SIZE);
-        recv(sockfd, buffer, BUFF_SIZE, 0);
-        if(strcmp(buffer, "quit\n") == 0) {
-            printf("Close program.\n");
+        memset(&packet, 0, sizeof(packet));
+
+        // Receive operation and size
+        recv(sockfd, (void*)&packet, sizeof(uint32_t) * 2, 0);
+
+        // Quit command, or invalid command
+        if(packet.operation >= QUIT) {
             exit_status = 1;
             break;
         }
 
-        else if(strcmp(buffer, "exit\n") == 0) {
-            printf("Disconnected from client.\n");
-            exit_status = 0;
+        else if(packet.operation == 0) {
+            printf("Invalid request from client.\n");
+            exit_status = 1;
             break;
         }
 
-        else{
-            if(strlen(buffer) > 0) {
-                printf("Received: %s", buffer);
-                send(sockfd, buffer, strlen(buffer), 0);
+        // TODO: Check data_size
+        buffer = malloc(packet.data_size);
+        if(buffer == NULL) {
+            printf("Failed to allocate memory for data buffer\n");
+            exit_status = 1;
+            break;
+        }
+
+        // Receive rest of the packet
+        recv(sockfd, (void*)buffer, packet.data_size, 0);
+        packet.data = buffer;
+
+        // Parse received packet
+        switch(packet.operation) {
+        case LIST_ITEMS:
+            item_data = parse_packet(ITEM_LIST_PACKET, packet.data, packet.data_size);
+            if(item_data == NULL) { 
+                free(buffer);
+                exit_status = 1;
+                return exit_status;
             }
+            for(iter = 0; iter < item_data->packet_data.item_list.num_items; iter++) {
+                printf("Item%d: %s\n", iter + 1, item_data->packet_data.item_list.item_list[iter]);
+            }
+            break;
+        case DELETE_ITEM:
+        case GET_ITEM:
+        case UPLOAD_ITEM:
+            // TODO
+            exit_status = 1;
+            free(buffer);
+            break;
         }
     }
     return exit_status;

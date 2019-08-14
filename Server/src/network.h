@@ -1,3 +1,11 @@
+/**
+ * @author Yuhei Horibe
+ * @brief This is basic Server/Client program
+ */
+
+#ifndef __UER_NETWORK_H__
+#define __UER_NETWORK_H__
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -20,4 +28,5 @@ int prepare_socket(int port_num);
 
 // This is for child process
 int communicate(int sockfd);
+#endif
 

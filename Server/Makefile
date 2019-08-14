@@ -7,7 +7,7 @@ OBJDIR := obj
 SRCDIR := src
 #DEPDIR := dep
 
-SRCS   := network.c main.c
+SRCS   := network.c user_protocol.c main.c
 OBJS   := $(addprefix $(OBJDIR)/,$(SRCS:%.c=%.o))
 DEPS   := $(addprefix $(OBJDIR)/,$(SRCS:%.c=%.d))
 

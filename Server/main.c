@@ -130,11 +130,13 @@ int communicate(int sockfd)
     return exit_status;
 }
 
+// *******************************************
+// main
+// *******************************************
 int main (int argc, char* argv[])
 {
-    // Socket address
+    // Client socket address
     struct sockaddr_in new_addr;
-
 
     // Create socket
     int                sockfd;
@@ -162,21 +164,19 @@ int main (int argc, char* argv[])
         // This system call fails when signal is sent to this process
         new_socket = accept(sockfd, (struct sockaddr*)&new_addr, &addr_size);
 
-        // Every time parent process gets signal, check the flag
-        //if(new_socket == -EINTR) { // Didn't work...
-        //    // If the flag is set, terminate parent process
-        //    if(close_parent) {
-        //        break;
-        //    }
-        //}
-
         if(new_socket < 0) {
-            // If the flag is set, terminate parent process
-            if(close_parent) {
-                break;
+            // Every time parent process gets signal, check the flag
+            if(errno == -EINTR) { // Didn't work...
+                // If the flag is set, terminate parent process
+                if(close_parent) {
+                    break;
+                }
             }
-            //printf("Failed to accept connection from client\n");
-            //return -1;
+
+            else {
+                printf("Failed to accept connection from client\n");
+                return -1;
+            }
         }
 
         else {

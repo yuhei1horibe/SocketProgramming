@@ -193,7 +193,7 @@ int main (int argc, char* argv[])
                 close(sockfd);
 
                 // Let child be killed when parent exits
-                prctl(PR_SET_PDEATHSIG, SIGHUP);
+                prctl(PR_SET_PDEATHSIG, SIGKILL);
 
                 exit(communicate(new_socket));
             }

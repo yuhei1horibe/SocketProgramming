@@ -61,7 +61,7 @@ int main (int argc, char* argv[])
 
         // Send messages to server
         send(sockfd, buffer, strlen(buffer), 0);
-        if((strcmp(buffer, "exit") == 0) || (strcmp(buffer, "quit") == 0)) {
+        if((strcmp(buffer, "exit\n") == 0) || (strcmp(buffer, "quit\n") == 0)) {
             printf("Disconnected from client.\n");
             printf("Sent: %s\n", buffer);
             recv(sockfd, buffer, BUFF_SIZE, 0);

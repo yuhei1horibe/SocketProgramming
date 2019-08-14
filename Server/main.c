@@ -122,7 +122,7 @@ int communicate(int sockfd)
 
         else{
             if(strlen(buffer) > 0) {
-                printf("Received: %s\n", buffer);
+                printf("Received: %s", buffer);
                 send(sockfd, buffer, strlen(buffer), 0);
             }
         }
@@ -166,7 +166,7 @@ int main (int argc, char* argv[])
 
         if(new_socket < 0) {
             // Every time parent process gets signal, check the flag
-            if(errno == -EINTR) { // Didn't work...
+            if(errno == EINTR) {
                 // If the flag is set, terminate parent process
                 if(close_parent) {
                     break;

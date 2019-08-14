@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "user_protocol.h"
 
 #define PORT      5555
 #define BUFF_SIZE 1024
@@ -26,6 +27,19 @@ int main (int argc, char* argv[])
 
     // Buffer
     char               buffer[BUFF_SIZE];
+
+    static char*       dummy[] = 
+    {
+        "test",
+        "list",
+        "program",
+        "protocol",
+        "study"
+    };
+    int                iter;
+    int                data_ptr;
+
+    struct user_packet_t packet;
 
     // Check command line argument
     if(argc != 2) {
@@ -59,21 +73,48 @@ int main (int argc, char* argv[])
         printf("Prompt> ");
         fgets(buffer, BUFF_SIZE, stdin);
 
-        // Send messages to server
-        send(sockfd, buffer, strlen(buffer), 0);
-        if((strcmp(buffer, "exit\n") == 0) || (strcmp(buffer, "quit\n") == 0)) {
-            printf("Disconnected from client.\n");
-            printf("Sent: %s\n", buffer);
-            recv(sockfd, buffer, BUFF_SIZE, 0);
-            printf("Received: %s\n", buffer);
-            break;
+        if(strcmp(buffer, "list\n") == 0) { 
+            // Initialize packet
+            memset(&packet, 0, sizeof(packet));
+
+            // Dummy data
+            for(iter = 0; iter < (sizeof(dummy) / sizeof(char*)); iter++) {
+                packet.data_size += strlen(dummy[iter]) + 1;
+            }
+            packet.data = malloc(packet.data_size);
+            if(packet.data == NULL) {
+                printf("Failed to allocate memory for packet data.\n");
+                close(sockfd);
+                return -1;
+            }
+
+            // Prepare data
+            data_ptr = 0;
+            for(iter = 0; iter < (sizeof(dummy) / sizeof(char*)); iter++) {
+                strcpy(&packet.data[data_ptr], dummy[iter]);
+                data_ptr = strlen(dummy[iter]);
+                packet.data[data_ptr++] = '\0';
+            }
+
+            // Send packet
+            send(sockfd, (void*)packet.data, packet.data_size + sizeof(uint32_t) * 2, 0);
         }
 
-        else{
-            printf("Sent: %s\n", buffer);
-            recv(sockfd, buffer, BUFF_SIZE, 0);
-            printf("Received: %s\n", buffer);
-        }
+        // Send messages to server
+        //send(sockfd, buffer, strlen(buffer), 0);
+        //if((strcmp(buffer, "exit\n") == 0) || (strcmp(buffer, "quit\n") == 0)) {
+        //    printf("Disconnected from client.\n");
+        //    printf("Sent: %s\n", buffer);
+        //    recv(sockfd, buffer, BUFF_SIZE, 0);
+        //    printf("Received: %s\n", buffer);
+        //    break;
+        //}
+
+        //else{
+        //    printf("Sent: %s\n", buffer);
+        //    recv(sockfd, buffer, BUFF_SIZE, 0);
+        //    printf("Received: %s\n", buffer);
+        //}
     }
     close(sockfd);
 

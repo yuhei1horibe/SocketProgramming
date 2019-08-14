@@ -1,26 +1,7 @@
-
-#include <unistd.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <sys/prctl.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-
-#define PORT      5555
-#define BUFF_SIZE 1024
+#include "network.h"
 
 bool   close_parent = false; // When this flag is set (signal), main routine will be terminated
 
-// *******************************************
-// Parent process
-// *******************************************
 // Signal handler (To avoid making zombie process)
 void child_close_handler(int signum)
 {
@@ -52,82 +33,6 @@ int setup_sig_chld_handler()
         return -1;
     }
     return 0;
-}
-
-// Socket initialization
-int prepare_socket(int port_num)
-{
-    struct sockaddr_in server_addr;
-    int                sockfd;
-    int                temp = 1;
-
-    // Create socket
-    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("Failed to create a socket\n");
-        return -1;
-    }
-
-    // Set socket options
-    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &temp, sizeof(int)) < 0) {
-        printf("Failed to set socket options\n");
-        return -1;
-    }
-
-    // Set address
-    memset((void*)&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family      = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port        = htons(PORT);
-
-    // Bind
-    if(bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        printf("Failed to bind address to socket\n");
-        close(sockfd);
-        return -1;
-    }
-
-    // Listen (wait for the client to be connected
-    printf("Listening on port: %d\n", port_num);
-    if(listen(sockfd, 10) < 0) {
-        printf("No connection.\n");
-        return -1;
-    }
-    return sockfd;
-}
-
-// *******************************************
-// Child process
-// *******************************************
-int communicate(int sockfd)
-{
-    // Buffer for message handling
-    char               buffer[BUFF_SIZE];
-    int                exit_status = 0;
-
-    // Receive message and print it
-    while(1) {
-        memset(buffer, 0, BUFF_SIZE);
-        recv(sockfd, buffer, BUFF_SIZE, 0);
-        if(strcmp(buffer, "quit\n") == 0) {
-            printf("Close program.\n");
-            exit_status = 1;
-            break;
-        }
-
-        else if(strcmp(buffer, "exit\n") == 0) {
-            printf("Disconnected from client.\n");
-            exit_status = 0;
-            break;
-        }
-
-        else{
-            if(strlen(buffer) > 0) {
-                printf("Received: %s", buffer);
-                send(sockfd, buffer, strlen(buffer), 0);
-            }
-        }
-    }
-    return exit_status;
 }
 
 // *******************************************

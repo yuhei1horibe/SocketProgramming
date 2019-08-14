@@ -1,20 +1,26 @@
-CC     = gcc
-CFLAGS = -g -Wall -O2
+CC     := gcc
+INCDIR := include
+CFLAGS := -g -O2 $(addprefix -I,$(INCDIR))
+PROG   := main.out
 
-SRCS   = network.c main.c
-OBJS   = $(SRCS:%.c=%.o)
-DEPS   = $(SRCS:%.c=%.d)
+OBJDIR := obj
+SRCDIR := src
+#DEPDIR := dep
+
+SRCS   := network.c main.c
+OBJS   := $(addprefix $(OBJDIR)/,$(SRCS:%.c=%.o))
+DEPS   := $(addprefix $(OBJDIR)/,$(SRCS:%.c=%.d))
 
 .PHONY: clean
 
-.c.o:
-	$(CC) -MMD -o $@ -c $<
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -MMD -o $@ -c $<
 
 all: $(OBJS)
-	$(CC) -o main.out $(OBJS)
+	$(CC) -o $(PROG) $(OBJS)
 
 clean:
-	rm -rf ./*.d ./*.o ./*.out
+	rm $(PROG) $(OBJDIR)/*
 
 -include $(DEPS)
 

@@ -3,6 +3,13 @@
 #include <string.h>
 #include "user_protocol.h"
 
+/**
+ * @brief It takes row data as parameter, and parses it into specific packet. This is internal use only.
+ * @param packet_type This indicates what kind of data this is.
+ * @param data A pointer to the valid data.
+ * @param size Size of data.
+ * @return On success, it returns parsed packet data. On parse error, it returns NULL.
+ */
 struct item_data_t* parse_packet(uint32_t packet_type, uint8_t* data, uint32_t size)
 {
     struct item_data_t* item_data = NULL;
@@ -85,6 +92,65 @@ struct item_data_t* parse_packet(uint32_t packet_type, uint8_t* data, uint32_t s
         return NULL;
     }
 
+    return item_data;
+}
+
+// Receive one packet
+struct item_data_t* receive_packet(int sockfd)
+{
+    // Buffer for message handling
+    uint8_t* buffer      = NULL;
+
+    // Packet
+    struct user_packet_t packet;
+    struct item_data_t*  item_data;
+
+    uint32_t iter;
+
+    // Receive packet
+    while(1) {
+        // Receive fixed header
+        recv(sockfd, &packet, sizeof(uint32_t) * 2, 0);
+
+        // Quit command, or invalid command
+        if(packet.operation >= QUIT) {
+            break;
+        }
+
+        else if(packet.operation == 0) {
+            printf("Invalid request from client.\n");
+            break;
+        }
+
+        // Parse received packet
+        switch(packet.operation) {
+        case LIST_ITEMS:
+            // Receive rest of the packet if exists
+            if(packet.data_size != 0) {
+                buffer = malloc(packet.data_size);
+                if(buffer == NULL) {
+                    printf("Failed to allocate memory for data buffer\n");
+                    break;
+                }
+
+                // Receive rest of the packet
+                recv(sockfd, buffer, packet.data_size, 0);
+                packet.data = buffer;
+
+                item_data = parse_packet(ITEM_LIST_PACKET, packet.data, packet.data_size);
+                if(item_data == NULL) { 
+                    free(buffer);
+                    return NULL;
+                }
+            }
+            break;
+        case DELETE_ITEM:
+        case GET_ITEM:
+        case UPLOAD_ITEM:
+            free(buffer);
+            return NULL;
+        }
+    }
     return item_data;
 }
 

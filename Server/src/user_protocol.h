@@ -62,13 +62,13 @@ struct item_data_t {
     } packet_data;
 };
 
-/**
- * @brief It takes row data as parameter, and parses it into specific packet.
- * @param packet_type This indicates what kind of data this is.
- * @param data A pointer to the valid data.
- * @param size Size of data.
- * @return On success, it returns parsed packet data. On parse error, it returns NULL.
- */
 struct item_data_t* parse_packet(uint32_t packet_type, uint8_t* data, uint32_t size);
+
+/**
+ * @brief This receives one packet, and returns the pointer to the packet structure. If error occurs, it returns NULL.
+ * @param sockfd Socket file descriptor to receive packet.
+ * @return On success, it returns parsed packet data. On error, it returns NULL.
+ */
+struct item_data_t* receive_packet(int sockfd);
 #endif
 

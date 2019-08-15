@@ -47,67 +47,22 @@ int prepare_socket(int port_num)
 // *******************************************
 int communicate(int sockfd)
 {
-    // Buffer for message handling
-    uint8_t* buffer      = NULL;
-    int32_t  exit_status = 0;
-
     // Packet
-    struct user_packet_t packet;
     struct item_data_t*  item_data;
-
     uint32_t iter;
+    int      exit_status = 0;
 
     // Receive packet
-    while(1) {
-        // Receive fixed header
-        recv(sockfd, &packet, sizeof(uint32_t) * 2, 0);
-
-        // Quit command, or invalid command
-        if(packet.operation >= QUIT) {
-            exit_status = 1;
-            break;
-        }
-
-        else if(packet.operation == 0) {
-            printf("Invalid request from client.\n");
-            exit_status = 1;
-            break;
-        }
-
-        // TODO: Check data_size
-        buffer = malloc(packet.data_size);
-        if(buffer == NULL) {
-            printf("Failed to allocate memory for data buffer\n");
-            exit_status = 1;
-            break;
-        }
-
-        // Receive rest of the packet
-        recv(sockfd, buffer, packet.data_size, 0);
-        packet.data = buffer;
-
-        // Parse received packet
-        switch(packet.operation) {
-        case LIST_ITEMS:
-            item_data = parse_packet(ITEM_LIST_PACKET, packet.data, packet.data_size);
-            if(item_data == NULL) { 
-                free(buffer);
-                exit_status = 1;
-                return exit_status;
-            }
-            for(iter = 0; iter < item_data->packet_data.item_list.num_items; iter++) {
-                printf("Item%d: %s\n", iter + 1, item_data->packet_data.item_list.item_list[iter]);
-            }
-            break;
-        case DELETE_ITEM:
-        case GET_ITEM:
-        case UPLOAD_ITEM:
-            // TODO
-            exit_status = 1;
-            free(buffer);
-            break;
-        }
+    item_data = receive_packet(sockfd);
+    if(item_data == NULL){
+        exit_status = 1;
     }
+
+    // This is test for list item command
+    for(iter = 0; iter < item_data->packet_data.item_list.num_items; iter++) {
+        printf("Item%d: %s\n", iter + 1, item_data->packet_data.item_list.item_list[iter]);
+    }
+    free(item_data);
     return exit_status;
 }
 

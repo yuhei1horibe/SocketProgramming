@@ -6,7 +6,7 @@ int prepare_socket(int port_num)
 {
     struct sockaddr_in server_addr;
     int                sockfd;
-    int                temp = 1;
+    int                temp     = 1;
 
     // Create socket
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -57,12 +57,10 @@ int communicate(int sockfd)
 
     uint32_t iter;
 
-    // Receive message and print it
+    // Receive packet
     while(1) {
-        memset(&packet, 0, sizeof(packet));
-
-        // Receive operation and size
-        recv(sockfd, (void*)&packet, sizeof(uint32_t) * 2, 0);
+        // Receive fixed header
+        recv(sockfd, &packet, sizeof(uint32_t) * 2, 0);
 
         // Quit command, or invalid command
         if(packet.operation >= QUIT) {
@@ -85,7 +83,7 @@ int communicate(int sockfd)
         }
 
         // Receive rest of the packet
-        recv(sockfd, (void*)buffer, packet.data_size, 0);
+        recv(sockfd, buffer, packet.data_size, 0);
         packet.data = buffer;
 
         // Parse received packet

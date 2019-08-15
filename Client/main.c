@@ -74,13 +74,16 @@ int main (int argc, char* argv[])
         fgets(buffer, BUFF_SIZE, stdin);
 
         if(strcmp(buffer, "list\n") == 0) { 
+            printf("List command.\n");
             // Initialize packet
             memset(&packet, 0, sizeof(packet));
+            packet.operation = LIST_ITEMS;
 
             // Dummy data
             for(iter = 0; iter < (sizeof(dummy) / sizeof(char*)); iter++) {
                 packet.data_size += strlen(dummy[iter]) + 1;
             }
+            printf("Packet data size: %d\n", packet.data_size);
             packet.data = malloc(packet.data_size);
             if(packet.data == NULL) {
                 printf("Failed to allocate memory for packet data.\n");
@@ -92,12 +95,21 @@ int main (int argc, char* argv[])
             data_ptr = 0;
             for(iter = 0; iter < (sizeof(dummy) / sizeof(char*)); iter++) {
                 strcpy(&packet.data[data_ptr], dummy[iter]);
-                data_ptr = strlen(dummy[iter]);
+                packet.data[data_ptr + strlen(dummy[iter]) + 1] = '\0';
+                //printf("data_ptr: %d, Copied string: %s\n", data_ptr, (char*)&packet.data[data_ptr]);
+                data_ptr += strlen(dummy[iter]);
                 packet.data[data_ptr++] = '\0';
             }
 
+            // For debugging
+            printf("packet_type: %d, data_size: %d\n", packet.operation, packet.data_size);
+            for(iter = 0; iter < packet.data_size; iter++) {
+                printf("data[%d]: %c\n", iter, packet.data[iter]);
+            }
+
             // Send packet
-            send(sockfd, (void*)packet.data, packet.data_size + sizeof(uint32_t) * 2, 0);
+            send(sockfd, (void*)&packet, sizeof(uint32_t) * 2, 0);  // Header
+            send(sockfd, (void*)packet.data, packet.data_size, 0); // Data
         }
 
         // Send messages to server

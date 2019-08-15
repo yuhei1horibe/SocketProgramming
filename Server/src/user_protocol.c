@@ -15,6 +15,12 @@ struct item_data_t* parse_packet(uint32_t packet_type, uint8_t* data, uint32_t s
         return NULL;
     }
 
+    // Debugging
+    //printf("Received data size: %d\n", size);
+    //for(iter = 0; iter < size; iter++) {
+    //    printf("data[%d]: %c\n", iter, data[iter]);
+    //}
+
     if((item_data = malloc(sizeof(struct item_data_t))) == NULL) {
         printf("Failed to allocate memory for parsed packet.\n");
         return NULL;
@@ -35,6 +41,7 @@ struct item_data_t* parse_packet(uint32_t packet_type, uint8_t* data, uint32_t s
                 item_count++;
             }
         }
+        printf("item_count: %d\n", item_count);
 
         if(item_count == 0) {
             printf("Invalid list format\n");
